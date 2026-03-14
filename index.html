@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentinel Firewall - Proteção Inteligente de Rede</title>
+<meta name="description" content="Plataforma enterprise de gerenciamento de firewall com configuração de regras em tempo real, IDS/IPS e monitoramento inteligente.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg-primary:#0a0a12;--bg-secondary:#0d0d1a;--bg-card:#111125;--bg-card-hover:#161635;
+--accent:#00d4ff;--accent-dim:rgba(0,212,255,.15);--accent-glow:0 0 20px rgba(0,212,255,.3);
+--danger:#ff3366;--danger-dim:rgba(255,51,102,.15);--danger-glow:0 0 20px rgba(255,51,102,.3);
+--success:#00ff88;--success-dim:rgba(0,255,136,.15);
+--warning:#ffaa00;--warning-dim:rgba(255,170,0,.15);
+--text-primary:#e8e8f0;--text-secondary:#8888a8;--text-muted:#555570;
+--border:#1a1a35;--border-accent:rgba(0,212,255,.25);
+--font-mono:'JetBrains Mono',monospace;--font-heading:'Space Grotesk',sans-serif;
+--radius:8px;--radius-lg:12px;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font-mono);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6{font-family:var(--font-heading);font-weight:600;line-height:1.2}
+a{color:var(--accent);text-decoration:none;transition:opacity .2s}
+a:hover{opacity:.8}
+img{max-width:100%;display:block}
+button{cursor:pointer;font-family:var(--font-mono)}
+input,select,textarea{font-family:var(--font-mono)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.container{width:100%;max-width:1200px;margin:0 auto;padding:0 20px}
+@media(min-width:768px){.container{padding:0 40px}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-secondary)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
+
+/* ===== NAV ===== */
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,18,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 20px;transition:box-shadow .3s}
+.nav.scrolled{box-shadow:0 4px 30px rgba(0,0,0,.5)}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-heading);font-weight:700;font-size:1.1rem;color:var(--text-primary)}
+.nav-logo .logo-icon{width:32px;height:32px;border:2px solid var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:.8rem}
+.nav-links{display:none;gap:24px;list-style:none}
+.nav-links a{color:var(--text-secondary);font-size:.8rem;text-transform:uppercase;letter-spacing:1px;transition:color .2s}
+.nav-links a:hover,.nav-links a:focus{color:var(--accent);opacity:1}
+.nav-toggle{display:flex;flex-direction:column;gap:4px;background:none;border:none;padding:8px;cursor:pointer}
+.nav-toggle span{width:20px;height:2px;background:var(--text-secondary);transition:all .3s}
+.mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(10,10,18,.98);border-bottom:1px solid var(--border);padding:20px;z-index:999}
+.mobile-menu.open{display:block}
+.mobile-menu a{display:block;padding:12px 0;color:var(--text-secondary);font-size:.85rem;border-bottom:1px solid var(--border)}
+.mobile-menu a:last-child{border:none}
+@media(min-width:768px){.nav-links{display:flex}.nav-toggle{display:none}}
+
+/* ===== HERO ===== */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:100px 20px 60px}
+#matrixCanvas{position:absolute;top:0;left:0;width:100%;height:100%;opacity:.15;pointer-events:none}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,18,.3) 0%,rgba(10,10,18,.95) 100%);pointer-events:none}
+.hero-content{position:relative;z-index:2;text-align:center;max-width:800px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--accent-dim);border:1px solid var(--border-accent);border-radius:20px;padding:6px 16px;margin-bottom:24px;font-size:.75rem;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px}
+.hero-badge .dot{width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hero h1{font-size:clamp(2rem,5vw,3.5rem);margin-bottom:16px;color:var(--text-primary)}
+.hero h1 .accent{color:var(--accent);position:relative}
+.hero-sub{font-size:clamp(.9rem,2vw,1.1rem);color:var(--text-secondary);margin-bottom:40px;max-width:600px;margin-left:auto;margin-right:auto}
+.hero-terminal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0;max-width:600px;margin:0 auto 40px;text-align:left;overflow:hidden}
+.terminal-bar{display:flex;align-items:center;gap:6px;padding:10px 16px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border)}
+.terminal-dot{width:10px;height:10px;border-radius:50%}
+.terminal-dot.r{background:#ff5f57}.terminal-dot.y{background:#febc2e}.terminal-dot.g{background:#28c840}
+.terminal-title{margin-left:auto;font-size:.7rem;color:var(--text-muted)}
+.terminal-body{padding:16px 20px;font-size:.8rem;line-height:1.8;min-height:120px}
+.terminal-body .prompt{color:var(--success)}
+.terminal-body .cmd{color:var(--accent)}
+.terminal-body .output{color:var(--text-secondary)}
+.terminal-body .typing-cursor{display:inline-block;width:8px;height:16px;background:var(--accent);animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.hero-buttons{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:var(--radius);font-size:.85rem;font-weight:500;border:none;transition:all .25s}
+.btn-primary{background:var(--accent);color:var(--bg-primary);box-shadow:var(--accent-glow)}
+.btn-primary:hover{background:#33ddff;box-shadow:0 0 30px rgba(0,212,255,.5);opacity:1}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--border-accent)}
+.btn-outline:hover{background:var(--accent-dim);opacity:1}
+.btn-danger{background:var(--danger);color:#fff;box-shadow:var(--danger-glow)}
+
+/* ===== STATS DASHBOARD ===== */
+.dashboard-section{padding:80px 0;background:var(--bg-secondary);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.section-header{text-align:center;margin-bottom:48px}
+.section-label{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px}
+.section-title{font-size:clamp(1.5rem,3vw,2.2rem);margin-bottom:12px}
+.section-desc{color:var(--text-secondary);font-size:.9rem;max-width:560px;margin:0 auto}
+.stats-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:480px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:768px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;text-align:center;position:relative;overflow:hidden;transition:all .3s}
+.stat-card:hover{border-color:var(--border-accent);box-shadow:var(--accent-glow);transform:translateY(-2px)}
+.stat-card .stat-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.stat-card:nth-child(1) .stat-icon{background:var(--danger-dim);color:var(--danger)}
+.stat-card:nth-child(2) .stat-icon{background:var(--accent-dim);color:var(--accent)}
+.stat-card:nth-child(3) .stat-icon{background:var(--success-dim);color:var(--success)}
+.stat-card:nth-child(4) .stat-icon{background:var(--warning-dim);color:var(--warning)}
+.stat-value{font-family:var(--font-heading);font-size:2rem;font-weight:700;margin-bottom:4px}
+.stat-card:nth-child(1) .stat-value{color:var(--danger)}
+.stat-card:nth-child(2) .stat-value{color:var(--accent)}
+.stat-card:nth-child(3) .stat-value{color:var(--success)}
+.stat-card:nth-child(4) .stat-value{color:var(--warning)}
+.stat-label{font-size:.75rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px}
+.stat-trend{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;margin-top:8px;padding:2px 8px;border-radius:10px}
+.stat-trend.up{color:var(--success);background:var(--success-dim)}
+.stat-trend.down{color:var(--danger);background:var(--danger-dim)}
+
+/* Live traffic bar */
+.traffic-bar{margin-top:32px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px}
+.traffic-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.traffic-header h4{font-size:.85rem;font-family:var(--font-heading)}
+.traffic-live{display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--success)}
+.traffic-live .dot{width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 1.5s infinite}
+#trafficCanvas{width:100%;height:80px;border-radius:var(--radius)}
+
+/* ===== RULE CONFIGURATOR ===== */
+.rules-section{padding:80px 0}
+.rules-layout{display:grid;grid-template-columns:1fr;gap:24px}
+@media(min-width:992px){.rules-layout{grid-template-columns:380px 1fr}}
+
+.rule-form-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;position:sticky;top:80px;align-self:start}
+.rule-form-card h3{font-size:1rem;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.form-group input,.form-group select{width:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text-primary);font-size:.8rem;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent);outline:none}
+.form-group select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%238888a8' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-actions{display:flex;gap:8px;margin-top:18px}
+.form-actions .btn{flex:1;justify-content:center;font-size:.8rem;padding:10px}
+
+.presets-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset-btn{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;font-size:.7rem;color:var(--text-secondary);transition:all .2s}
+.preset-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+
+.rules-table-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.rules-table-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px}
+.rules-table-header h3{font-size:.95rem;display:flex;align-items:center;gap:8px}
+.rules-count{background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:10px;font-size:.7rem}
+.table-actions{display:flex;gap:8px}
+.table-actions .btn{font-size:.7rem;padding:6px 12px}
+.rules-table-wrap{overflow-x:auto}
+table.rules-table{width:100%;border-collapse:collapse;min-width:700px}
+.rules-table thead{background:rgba(0,0,0,.3)}
+.rules-table th{padding:10px 14px;font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);text-align:left;white-space:nowrap;cursor:pointer;user-select:none;transition:color .2s}
+.rules-table th:hover{color:var(--accent)}
+.rules-table th .sort-icon{display:inline-block;margin-left:4px;opacity:.4}
+.rules-table th.sorted .sort-icon{opacity:1;color:var(--accent)}
+.rules-table td{padding:10px 14px;font-size:.8rem;border-top:1px solid var(--border);white-space:nowrap}
+.rules-table tr{transition:background .15s}
+.rules-table tbody tr:hover{background:rgba(0,212,255,.03)}
+.action-badge{display:inline-flex;padding:3px 10px;border-radius:10px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.action-badge.accept{background:var(--success-dim);color:var(--success)}
+.action-badge.drop{background:var(--danger-dim);color:var(--danger)}
+.action-badge.reject{background:var(--warning-dim);color:var(--warning)}
+.proto-badge{font-size:.7rem;color:var(--accent);background:var(--accent-dim);padding:2px 8px;border-radius:4px}
+.row-actions{display:flex;gap:4px}
+.row-actions button{background:none;border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-secondary);font-size:.7rem;transition:all .2s}
+.row-actions button:hover{border-color:var(--accent);color:var(--accent)}
+.row-actions button.delete:hover{border-color:var(--danger);color:var(--danger)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--text-muted);font-size:.85rem}
+
+/* Export modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:80vh;overflow:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-header h3{font-size:.95rem}
+.modal-close{background:none;border:none;color:var(--text-secondary);font-size:1.2rem;cursor:pointer}
+.modal-body{padding:20px}
+.export-output{background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-size:.75rem;line-height:1.8;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow:auto;color:var(--success)}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* ===== FEATURES ===== */
+.features-section{padding:80px 0;background:var(--bg-secondary);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.features-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:640px){.features-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:992px){.features-grid{grid-template-columns:repeat(4,1fr)}}
+.feature-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;transition:all .3s;position:relative;overflow:hidden}
+.feature-card:hover{border-color:var(--border-accent);box-shadow:var(--accent-glow);transform:translateY(-3px)}
+.feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .3s}
+.feature-card:hover::before{opacity:1}
+.feature-icon{width:44px;height:44px;border-radius:10px;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.feature-card h4{font-size:.95rem;margin-bottom:8px}
+.feature-card p{font-size:.8rem;color:var(--text-secondary);line-height:1.6}
+
+/* ===== ARCHITECTURE ===== */
+.arch-section{padding:80px 0}
+.arch-diagram{display:flex;flex-direction:column;align-items:center;gap:0;max-width:900px;margin:0 auto}
+@media(min-width:768px){.arch-diagram{flex-direction:row;gap:0;justify-content:center}}
+.arch-node{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;text-align:center;min-width:140px;position:relative;transition:all .3s}
+.arch-node:hover{border-color:var(--border-accent);box-shadow:var(--accent-glow)}
+.arch-node .node-icon{margin:0 auto 10px;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.arch-node h4{font-size:.8rem;margin-bottom:4px}
+.arch-node p{font-size:.65rem;color:var(--text-muted)}
+.arch-node.internet .node-icon{background:var(--danger-dim);color:var(--danger)}
+.arch-node.firewall{border-color:var(--accent);box-shadow:var(--accent-glow)}
+.arch-node.firewall .node-icon{background:var(--accent-dim);color:var(--accent)}
+.arch-node.dmz .node-icon{background:var(--warning-dim);color:var(--warning)}
+.arch-node.internal .node-icon{background:var(--success-dim);color:var(--success)}
+.arch-arrow{display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:.7rem;padding:8px 0;flex-direction:column;gap:2px}
+@media(min-width:768px){.arch-arrow{padding:0 8px;flex-direction:row}}
+.arch-arrow .arrow-line{width:2px;height:24px;background:linear-gradient(to bottom,var(--accent),transparent);position:relative}
+@media(min-width:768px){.arch-arrow .arrow-line{width:40px;height:2px;background:linear-gradient(to right,var(--accent),transparent)}}
+.arch-arrow .arrow-label{font-size:.6rem;color:var(--text-muted);white-space:nowrap}
+.arch-detail-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:40px}
+@media(min-width:640px){.arch-detail-grid{grid-template-columns:repeat(3,1fr)}}
+.arch-detail{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center}
+.arch-detail h4{font-size:.8rem;color:var(--accent);margin-bottom:6px}
+.arch-detail p{font-size:.75rem;color:var(--text-secondary)}
+
+/* ===== DOCS / FAQ ===== */
+.docs-section{padding:80px 0;background:var(--bg-secondary);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.accordion{max-width:800px;margin:0 auto}
+.accordion-item{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:8px;overflow:hidden}
+.accordion-trigger{width:100%;background:none;border:none;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;color:var(--text-primary);font-size:.85rem;font-family:var(--font-heading);font-weight:500;text-align:left;transition:background .2s}
+.accordion-trigger:hover{background:rgba(0,212,255,.03)}
+.accordion-trigger .chevron{transition:transform .3s;color:var(--text-muted);flex-shrink:0;margin-left:12px}
+.accordion-item.open .accordion-trigger .chevron{transform:rotate(180deg);color:var(--accent)}
+.accordion-content{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.accordion-inner{padding:0 20px 16px;font-size:.8rem;color:var(--text-secondary);line-height:1.7}
+.accordion-inner code{background:var(--bg-primary);padding:2px 6px;border-radius:3px;font-size:.75rem;color:var(--accent)}
+
+/* ===== DEPLOY ===== */
+.deploy-section{padding:80px 0}
+.deploy-tabs{display:flex;gap:4px;margin-bottom:24px;flex-wrap:wrap}
+.deploy-tab{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0;padding:10px 20px;font-size:.8rem;color:var(--text-secondary);cursor:pointer;transition:all .2s;font-family:var(--font-mono);border-bottom:none}
+.deploy-tab.active{background:var(--bg-card);color:var(--accent);border-color:var(--border-accent);border-bottom:2px solid var(--accent)}
+.deploy-content{background:var(--bg-card);border:1px solid var(--border);border-radius:0 var(--radius-lg) var(--radius-lg) var(--radius-lg);overflow:hidden}
+.deploy-panel{display:none;padding:24px}
+.deploy-panel.active{display:block}
+.code-block{background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.code-header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border)}
+.code-header span{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.code-header button{background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:.65rem;color:var(--text-secondary);cursor:pointer;transition:all .2s;font-family:var(--font-mono)}
+.code-header button:hover{border-color:var(--accent);color:var(--accent)}
+.code-body{padding:16px;font-size:.75rem;line-height:1.8;overflow-x:auto;white-space:pre}
+.code-body .comment{color:var(--text-muted)}
+.code-body .keyword{color:var(--accent)}
+.code-body .string{color:var(--success)}
+.code-body .flag{color:var(--warning)}
+
+/* ===== FOOTER ===== */
+.footer{border-top:1px solid var(--border);padding:40px 0}
+.footer-inner{display:flex;flex-direction:column;align-items:center;gap:24px}
+.footer-badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.tech-badge{display:inline-flex;align-items:center;gap:6px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:.7rem;color:var(--text-secondary)}
+.tech-badge .badge-dot{width:6px;height:6px;border-radius:50%}
+.footer-copy{font-size:.7rem;color:var(--text-muted);text-align:center}
+
+/* ===== ANIMATIONS ===== */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}
+.reveal-delay-2{transition-delay:.2s}
+.reveal-delay-3{transition-delay:.3s}
+.reveal-delay-4{transition-delay:.4s}
+
+/* Toast notifications */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg-card);border:1px solid var(--border-accent);border-radius:var(--radius);padding:12px 20px;font-size:.8rem;color:var(--text-primary);z-index:3000;transform:translateX(120%);transition:transform .3s;display:flex;align-items:center;gap:8px;box-shadow:var(--accent-glow)}
+.toast.show{transform:translateX(0)}
+.toast .toast-icon{color:var(--success)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav" role="navigation" aria-label="Navegação principal">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo" aria-label="Sentinel Firewall Home">
+      <div class="logo-icon"><i data-lucide="shield" style="width:18px;height:18px"></i></div>
+      Sentinel Firewall
+    </a>
+    <ul class="nav-links" role="menubar">
+      <li><a href="#dashboard" role="menuitem">Dashboard</a></li>
+      <li><a href="#configurador" role="menuitem">Regras</a></li>
+      <li><a href="#recursos" role="menuitem">Recursos</a></li>
+      <li><a href="#arquitetura" role="menuitem">Arquitetura</a></li>
+      <li><a href="#docs" role="menuitem">Docs</a></li>
+      <li><a href="#deploy" role="menuitem">Deploy</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu" role="menu">
+    <a href="#dashboard" role="menuitem">Dashboard</a>
+    <a href="#configurador" role="menuitem">Regras</a>
+    <a href="#recursos" role="menuitem">Recursos</a>
+    <a href="#arquitetura" role="menuitem">Arquitetura</a>
+    <a href="#docs" role="menuitem">Docs</a>
+    <a href="#deploy" role="menuitem">Deploy</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <canvas id="matrixCanvas" aria-hidden="true"></canvas>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="dot"></span> Sistema Ativo</div>
+    <h1>Sentinel Firewall<br><span class="accent">Proteção Inteligente de Rede</span></h1>
+    <p class="hero-sub">Plataforma enterprise de gerenciamento de firewall com IDS/IPS integrado, monitoramento em tempo real e configuração avançada de regras.</p>
+    <div class="hero-terminal">
+      <div class="terminal-bar">
+        <span class="terminal-dot r"></span>
+        <span class="terminal-dot y"></span>
+        <span class="terminal-dot g"></span>
+        <span class="terminal-title">sentinel-fw ~ bash</span>
+      </div>
+      <div class="terminal-body" id="terminalBody"></div>
+    </div>
+    <div class="hero-buttons">
+      <a href="#configurador" class="btn btn-primary"><i data-lucide="settings" style="width:16px;height:16px"></i> Configurar Regras</a>
+      <a href="#docs" class="btn btn-outline"><i data-lucide="book-open" style="width:16px;height:16px"></i> Documentação</a>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="dashboard-section" id="dashboard">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label"><i data-lucide="activity" style="width:14px;height:14px"></i> Painel em Tempo Real</div>
+      <h2 class="section-title">Dashboard de Monitoramento</h2>
+      <p class="section-desc">Visualize o estado da sua rede em tempo real com métricas atualizadas a cada segundo.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card reveal reveal-delay-1">
+        <div class="stat-icon"><i data-lucide="shield-off" style="width:24px;height:24px"></i></div>
+        <div class="stat-value" data-counter="1847">0</div>
+        <div class="stat-label">IPs Bloqueados</div>
+        <div class="stat-trend up"><i data-lucide="trending-up" style="width:12px;height:12px"></i> +23 hoje</div>
+      </div>
+      <div class="stat-card reveal reveal-delay-2">
+        <div class="stat-icon"><i data-lucide="list-checks" style="width:24px;height:24px"></i></div>
+        <div class="stat-value" data-counter="342">0</div>
+        <div class="stat-label">Regras Ativas</div>
+        <div class="stat-trend up"><i data-lucide="trending-up" style="width:12px;height:12px"></i> 12 novas</div>
+      </div>
+      <div class="stat-card reveal reveal-delay-3">
+        <div class="stat-icon"><i data-lucide="network" style="width:24px;height:24px"></i></div>
+        <div class="stat-value" data-counter="24" data-suffix=" TB">0</div>
+        <div class="stat-label">Tráfego Monitorado</div>
+        <div class="stat-trend up"><i data-lucide="trending-up" style="width:12px;height:12px"></i> 2.4 TB/dia</div>
+      </div>
+      <div class="stat-card reveal reveal-delay-4">
+        <div class="stat-icon"><i data-lucide="bell-ring" style="width:24px;height:24px"></i></div>
+        <div class="stat-value" data-counter="56">0</div>
+        <div class="stat-label">Alertas Críticos</div>
+        <div class="stat-trend down"><i data-lucide="trending-down" style="width:12px;height:12px"></i> -8 vs ontem</div>
+      </div>
+    </div>
+    <div class="traffic-bar reveal">
+      <div class="traffic-header">
+        <h4><i data-lucide="radio" style="width:14px;height:14px;margin-right:6px;color:var(--accent)"></i> Tráfego de Rede - Últimas 2h</h4>
+        <div class="traffic-live"><span class="dot"></span> Ao vivo</div>
+      </div>
+      <canvas id="trafficCanvas" aria-label="Gráfico de tráfego de rede em tempo real"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- RULE CONFIGURATOR -->
+<section class="rules-section" id="configurador">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label"><i data-lucide="sliders-horizontal" style="width:14px;height:14px"></i> Configurador Interativo</div>
+      <h2 class="section-title">Gerenciador de Regras</h2>
+      <p class="section-desc">Crie, edite e exporte regras de firewall com interface visual. Persistência via localStorage.</p>
+    </div>
+    <div class="presets-bar reveal">
+      <span style="font-size:.7rem;color:var(--text-muted);margin-right:4px;align-self:center">Presets:</span>
+      <button class="preset-btn" data-preset="webserver"><i data-lucide="globe" style="width:12px;height:12px"></i> Web Server</button>
+      <button class="preset-btn" data-preset="database"><i data-lucide="database" style="width:12px;height:12px"></i> Banco de Dados</button>
+      <button class="preset-btn" data-preset="mailserver"><i data-lucide="mail" style="width:12px;height:12px"></i> Servidor de E-mail</button>
+      <button class="preset-btn" data-preset="ssh"><i data-lucide="terminal" style="width:12px;height:12px"></i> SSH Seguro</button>
+    </div>
+    <div class="rules-layout">
+      <div class="rule-form-card reveal">
+        <h3><i data-lucide="plus-circle" style="width:18px;height:18px;color:var(--accent)"></i> Nova Regra</h3>
+        <form id="ruleForm" autocomplete="off">
+          <div class="form-group">
+            <label for="ruleProto">Protocolo</label>
+            <select id="ruleProto" required>
+              <option value="TCP">TCP</option>
+              <option value="UDP">UDP</option>
+              <option value="ICMP">ICMP</option>
+              <option value="ALL">Todos</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ruleSrcPort">Porta Origem</label>
+              <input type="text" id="ruleSrcPort" placeholder="Ex: 1024:65535">
+            </div>
+            <div class="form-group">
+              <label for="ruleDstPort">Porta Destino</label>
+              <input type="text" id="ruleDstPort" placeholder="Ex: 80,443">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="ruleSrcIP">IP Origem</label>
+            <input type="text" id="ruleSrcIP" placeholder="Ex: 192.168.1.0/24 ou 0.0.0.0/0">
+          </div>
+          <div class="form-group">
+            <label for="ruleDstIP">IP Destino</label>
+            <input type="text" id="ruleDstIP" placeholder="Ex: 10.0.0.1 ou 0.0.0.0/0">
+          </div>
+          <div class="form-group">
+            <label for="ruleAction">Ação</label>
+            <select id="ruleAction" required>
+              <option value="ACCEPT">ACCEPT - Permitir</option>
+              <option value="DROP">DROP - Descartar</option>
+              <option value="REJECT">REJECT - Rejeitar</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ruleComment">Comentário</label>
+            <input type="text" id="ruleComment" placeholder="Descrição da regra">
+          </div>
+          <input type="hidden" id="ruleEditId" value="">
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="ruleSubmitBtn"><i data-lucide="plus" style="width:14px;height:14px"></i> Adicionar</button>
+            <button type="button" class="btn btn-outline" id="ruleCancelBtn" style="display:none">Cancelar</button>
+          </div>
+        </form>
+      </div>
+      <div class="reveal">
+        <div class="rules-table-card">
+          <div class="rules-table-header">
+            <h3><i data-lucide="table" style="width:16px;height:16px;color:var(--accent)"></i> Regras Configuradas <span class="rules-count" id="rulesCount">0</span></h3>
+            <div class="table-actions">
+              <button class="btn btn-outline" id="exportBtn"><i data-lucide="download" style="width:12px;height:12px"></i> Exportar iptables</button>
+              <button class="btn btn-outline delete" id="clearAllBtn" style="color:var(--danger);border-color:rgba(255,51,102,.25)"><i data-lucide="trash-2" style="width:12px;height:12px"></i> Limpar</button>
+            </div>
+          </div>
+          <div class="rules-table-wrap">
+            <table class="rules-table" id="rulesTable" role="table">
+              <thead>
+                <tr>
+                  <th data-sort="id"># <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="proto">Protocolo <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="srcPort">Porta Orig. <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="dstPort">Porta Dest. <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="srcIP">IP Origem <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="dstIP">IP Destino <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="action">Ação <span class="sort-icon">&#9650;</span></th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="rulesBody"></tbody>
+            </table>
+            <div class="empty-state" id="emptyState">
+              <i data-lucide="inbox" style="width:32px;height:32px;margin:0 auto 12px;display:block;color:var(--text-muted)"></i>
+              Nenhuma regra configurada. Adicione regras ou importe um preset.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModal" role="dialog" aria-modal="true" aria-label="Exportar regras iptables">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i data-lucide="file-code" style="width:16px;height:16px;color:var(--accent);margin-right:6px"></i> Exportar como iptables</h3>
+      <button class="modal-close" id="closeModal" aria-label="Fechar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <pre class="export-output" id="exportOutput"></pre>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="copyExport"><i data-lucide="copy" style="width:12px;height:12px"></i> Copiar</button>
+      <button class="btn btn-primary" onclick="document.getElementById('exportModal').classList.remove('open')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features-section" id="recursos">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label"><i data-lucide="zap" style="width:14px;height:14px"></i> Recursos Enterprise</div>
+      <h2 class="section-title">Funcionalidades Avançadas</h2>
+      <p class="section-desc">Segurança de nível empresarial com automação inteligente e conformidade integrada.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon"><i data-lucide="scan-eye" style="width:22px;height:22px"></i></div>
+        <h4>Integração IDS/IPS</h4>
+        <p>Sistema de detecção e prevenção de intrusão integrado com assinaturas atualizadas em tempo real via Suricata e Snort.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon"><i data-lucide="monitor" style="width:22px;height:22px"></i></div>
+        <h4>Monitoramento Real-time</h4>
+        <p>Dashboard com métricas ao vivo, gráficos de tráfego, geolocalização de IPs e alertas instantâneos via WebSocket.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon"><i data-lucide="shield-alert" style="width:22px;height:22px"></i></div>
+        <h4>Auto-Block Ameaças</h4>
+        <p>Bloqueio automático de IPs maliciosos com análise comportamental, rate limiting e integração com feeds de threat intelligence.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-4">
+        <div class="feature-icon"><i data-lucide="file-check" style="width:22px;height:22px"></i></div>
+        <h4>Relatórios de Compliance</h4>
+        <p>Geração automática de relatórios LGPD, ISO 27001, PCI-DSS e SOC 2 com evidências auditáveis e exportação PDF.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section class="arch-section" id="arquitetura">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label"><i data-lucide="git-branch" style="width:14px;height:14px"></i> Topologia de Rede</div>
+      <h2 class="section-title">Arquitetura de Segurança</h2>
+      <p class="section-desc">Defesa em profundidade com múltiplas camadas de proteção entre a internet e a rede interna.</p>
+    </div>
+    <div class="arch-diagram reveal">
+      <div class="arch-node internet">
+        <div class="node-icon"><i data-lucide="globe" style="width:20px;height:20px"></i></div>
+        <h4>Internet</h4>
+        <p>Tráfego externo</p>
+      </div>
+      <div class="arch-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Ingress</div>
+      </div>
+      <div class="arch-node firewall">
+        <div class="node-icon"><i data-lucide="shield" style="width:20px;height:20px"></i></div>
+        <h4>Sentinel FW</h4>
+        <p>IDS/IPS + WAF</p>
+      </div>
+      <div class="arch-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Filtrado</div>
+      </div>
+      <div class="arch-node dmz">
+        <div class="node-icon"><i data-lucide="server" style="width:20px;height:20px"></i></div>
+        <h4>DMZ</h4>
+        <p>Serviços públicos</p>
+      </div>
+      <div class="arch-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Seguro</div>
+      </div>
+      <div class="arch-node internal">
+        <div class="node-icon"><i data-lucide="lock" style="width:20px;height:20px"></i></div>
+        <h4>Rede Interna</h4>
+        <p>Recursos protegidos</p>
+      </div>
+    </div>
+    <div class="arch-detail-grid reveal">
+      <div class="arch-detail">
+        <h4>Camada de Borda</h4>
+        <p>Rate limiting, GeoIP blocking, DDoS mitigation, TLS termination</p>
+      </div>
+      <div class="arch-detail">
+        <h4>Camada de Inspeção</h4>
+        <p>Deep packet inspection, SSL/TLS inspection, protocol validation</p>
+      </div>
+      <div class="arch-detail">
+        <h4>Camada de Política</h4>
+        <p>Micro-segmentação, zero-trust, least-privilege, audit logging</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOCS / FAQ -->
+<section class="docs-section" id="docs">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label"><i data-lucide="book-open" style="width:14px;height:14px"></i> Base de Conhecimento</div>
+      <h2 class="section-title">Documentação e FAQ</h2>
+      <p class="section-desc">Respostas rápidas para as dúvidas mais comuns sobre a plataforma.</p>
+    </div>
+    <div class="accordion reveal">
+      <div class="accordion-item">
+        <button class="accordion-trigger" aria-expanded="false">
+          Como funciona o auto-bloqueio de ameaças?
+          <span class="chevron"><i data-lucide="chevron-down" style="width:16px;height:16px"></i></span>
+        </button>
+        <div class="accordion-content"><div class="accordion-inner">
+          O Sentinel Firewall analisa padrões de tráfego em tempo real usando machine learning. Quando detecta comportamento anômalo (port scanning, brute force, DDoS), automaticamente adiciona o IP à blocklist com um TTL configurável. O sistema integra feeds de threat intelligence como <code>abuse.ch</code>, <code>spamhaus</code> e <code>alienvault OTX</code> para enriquecer a análise. As regras de auto-block podem ser customizadas por severidade, tipo de ataque e zona de rede.
+        </div></div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger" aria-expanded="false">
+          Quais protocolos e camadas o IDS/IPS suporta?
+          <span class="chevron"><i data-lucide="chevron-down" style="width:16px;height:16px"></i></span>
+        </button>
+        <div class="accordion-content"><div class="accordion-inner">
+          O módulo IDS/IPS opera nas camadas 3 a 7 do modelo OSI. Suporta inspeção profunda de pacotes para protocolos <code>TCP</code>, <code>UDP</code>, <code>ICMP</code>, <code>HTTP/HTTPS</code>, <code>DNS</code>, <code>FTP</code>, <code>SSH</code>, <code>SMTP</code> e <code>TLS</code>. As assinaturas são atualizadas diariamente via integração com Suricata ET Rules e regras customizadas podem ser escritas no formato <code>.rules</code> nativo.
+        </div></div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger" aria-expanded="false">
+          Como exportar regras para um servidor iptables existente?
+          <span class="chevron"><i data-lucide="chevron-down" style="width:16px;height:16px"></i></span>
+        </button>
+        <div class="accordion-content"><div class="accordion-inner">
+          Use o Configurador de Regras nesta página para criar suas regras visualmente, depois clique em "Exportar iptables". O sistema gera comandos <code>iptables</code> prontos para execução. Você pode copiar e colar diretamente no terminal ou salvar como script <code>.sh</code>. Para persistência, use <code>iptables-save > /etc/iptables/rules.v4</code> após aplicar as regras. O formato de exportação também suporta <code>nftables</code> e <code>ufw</code>.
+        </div></div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger" aria-expanded="false">
+          Como configurar alertas e notificações?
+          <span class="chevron"><i data-lucide="chevron-down" style="width:16px;height:16px"></i></span>
+        </button>
+        <div class="accordion-content"><div class="accordion-inner">
+          O Sentinel Firewall suporta notificações via <code>webhook</code>, <code>e-mail SMTP</code>, <code>Slack</code>, <code>Telegram</code> e <code>PagerDuty</code>. Configure em <code>Configurações > Alertas</code> no painel admin. Você pode definir regras de alerta por severidade (info, warning, critical), tipo de evento (bloqueio, scan, brute force) e frequência. Alertas críticos geram notificações imediatas; os demais são agrupados em digests configuráveis (5min, 15min, 1h).
+        </div></div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger" aria-expanded="false">
+          Qual o impacto no desempenho da rede?
+          <span class="chevron"><i data-lucide="chevron-down" style="width:16px;height:16px"></i></span>
+        </button>
+        <div class="accordion-content"><div class="accordion-inner">
+          O Sentinel Firewall é projetado para alta performance. Com <code>DPDK</code> (Data Plane Development Kit), atinge throughput de até 40 Gbps com latência inferior a 1ms. O motor de regras usa tabelas hash otimizadas com complexidade O(1) para lookup. Em ambientes típicos (até 10k regras), o overhead é inferior a 0.1ms por pacote. O módulo IDS opera em modo passivo por padrão, sem impacto no path de dados.
+        </div></div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger" aria-expanded="false">
+          Suporta alta disponibilidade e clustering?
+          <span class="chevron"><i data-lucide="chevron-down" style="width:16px;height:16px"></i></span>
+        </button>
+        <div class="accordion-content"><div class="accordion-inner">
+          Sim. O Sentinel Firewall suporta deploy em cluster ativo-passivo e ativo-ativo com sincronização de estado via <code>conntrackd</code>. O failover automático ocorre em menos de 2 segundos. As regras são replicadas via <code>etcd</code> distribuído. Para ambientes Kubernetes, use o Helm chart oficial com suporte a <code>CRDs</code> para gerenciar regras como recursos nativos do cluster.
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPLOY -->
+<section class="deploy-section" id="deploy">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label"><i data-lucide="rocket" style="width:14px;height:14px"></i> Guia de Instalação</div>
+      <h2 class="section-title">Deploy em Produção</h2>
+      <p class="section-desc">Escolha o método de deploy ideal para o seu ambiente.</p>
+    </div>
+    <div class="reveal">
+      <div class="deploy-tabs">
+        <button class="deploy-tab active" data-tab="docker">Docker</button>
+        <button class="deploy-tab" data-tab="systemd">Systemd</button>
+        <button class="deploy-tab" data-tab="manual">Manual</button>
+      </div>
+      <div class="deploy-content">
+        <!-- Docker -->
+        <div class="deploy-panel active" id="tab-docker">
+          <div class="code-block">
+            <div class="code-header"><span>docker-compose.yml</span><button onclick="copyCode(this)">Copiar</button></div>
+            <div class="code-body"><span class="comment"># Sentinel Firewall - Docker Compose</span>
+<span class="keyword">version</span>: <span class="string">"3.8"</span>
+
+<span class="keyword">services</span>:
+  <span class="keyword">sentinel-fw</span>:
+    <span class="keyword">image</span>: <span class="string">sentinel/firewall:latest</span>
+    <span class="keyword">container_name</span>: <span class="string">sentinel-firewall</span>
+    <span class="keyword">restart</span>: <span class="string">always</span>
+    <span class="keyword">network_mode</span>: <span class="string">host</span>
+    <span class="keyword">cap_add</span>:
+      - <span class="string">NET_ADMIN</span>
+      - <span class="string">NET_RAW</span>
+    <span class="keyword">volumes</span>:
+      - <span class="string">./config:/app/config</span>
+      - <span class="string">./data:/app/data</span>
+      - <span class="string">/var/log/sentinel:/app/logs</span>
+    <span class="keyword">ports</span>:
+      - <span class="string">"3100:3100"</span>
+    <span class="keyword">environment</span>:
+      - <span class="flag">SENTINEL_MODE=production</span>
+      - <span class="flag">SENTINEL_LOG_LEVEL=info</span>
+      - <span class="flag">SENTINEL_ADMIN_PASS=SuaSenhaSegura</span></div>
+          </div>
+          <div class="code-block">
+            <div class="code-header"><span>Terminal</span><button onclick="copyCode(this)">Copiar</button></div>
+            <div class="code-body"><span class="comment"># Iniciar o Sentinel Firewall</span>
+<span class="keyword">$</span> docker-compose up <span class="flag">-d</span>
+
+<span class="comment"># Verificar status</span>
+<span class="keyword">$</span> docker logs <span class="flag">-f</span> sentinel-firewall
+
+<span class="comment"># Acessar painel admin</span>
+<span class="keyword">$</span> curl http://localhost:3100/health</div>
+          </div>
+        </div>
+        <!-- Systemd -->
+        <div class="deploy-panel" id="tab-systemd">
+          <div class="code-block">
+            <div class="code-header"><span>/etc/systemd/system/sentinel-fw.service</span><button onclick="copyCode(this)">Copiar</button></div>
+            <div class="code-body"><span class="keyword">[Unit]</span>
+<span class="flag">Description</span>=<span class="string">Sentinel Firewall Service</span>
+<span class="flag">After</span>=<span class="string">network.target</span>
+<span class="flag">Wants</span>=<span class="string">network-online.target</span>
+
+<span class="keyword">[Service]</span>
+<span class="flag">Type</span>=<span class="string">simple</span>
+<span class="flag">User</span>=<span class="string">sentinel</span>
+<span class="flag">WorkingDirectory</span>=<span class="string">/opt/sentinel-firewall</span>
+<span class="flag">ExecStart</span>=<span class="string">/usr/bin/node /opt/sentinel-firewall/server.js</span>
+<span class="flag">Restart</span>=<span class="string">always</span>
+<span class="flag">RestartSec</span>=<span class="string">5</span>
+<span class="flag">Environment</span>=<span class="string">NODE_ENV=production</span>
+<span class="flag">AmbientCapabilities</span>=<span class="string">CAP_NET_ADMIN CAP_NET_RAW</span>
+
+<span class="keyword">[Install]</span>
+<span class="flag">WantedBy</span>=<span class="string">multi-user.target</span></div>
+          </div>
+          <div class="code-block">
+            <div class="code-header"><span>Terminal</span><button onclick="copyCode(this)">Copiar</button></div>
+            <div class="code-body"><span class="comment"># Instalar e iniciar o serviço</span>
+<span class="keyword">$</span> sudo systemctl daemon-reload
+<span class="keyword">$</span> sudo systemctl enable sentinel-fw
+<span class="keyword">$</span> sudo systemctl start sentinel-fw
+
+<span class="comment"># Verificar status</span>
+<span class="keyword">$</span> sudo systemctl status sentinel-fw
+<span class="keyword">$</span> sudo journalctl <span class="flag">-u</span> sentinel-fw <span class="flag">-f</span></div>
+          </div>
+        </div>
+        <!-- Manual -->
+        <div class="deploy-panel" id="tab-manual">
+          <div class="code-block">
+            <div class="code-header"><span>Terminal</span><button onclick="copyCode(this)">Copiar</button></div>
+            <div class="code-body"><span class="comment"># 1. Clonar repositório</span>
+<span class="keyword">$</span> git clone https://github.com/sentinel/firewall.git
+<span class="keyword">$</span> cd firewall
+
+<span class="comment"># 2. Instalar dependências</span>
+<span class="keyword">$</span> npm install <span class="flag">--production</span>
+
+<span class="comment"># 3. Configurar ambiente</span>
+<span class="keyword">$</span> cp .env.example .env
+<span class="keyword">$</span> nano .env
+
+<span class="comment"># 4. Configurar capacidades de rede</span>
+<span class="keyword">$</span> sudo setcap <span class="string">'cap_net_admin,cap_net_raw+eip'</span> $(which node)
+
+<span class="comment"># 5. Iniciar em produção</span>
+<span class="keyword">$</span> NODE_ENV=production node server.js
+
+<span class="comment"># 6. (Opcional) Usar PM2 para gerenciamento</span>
+<span class="keyword">$</span> pm2 start server.js <span class="flag">--name</span> sentinel-fw
+<span class="keyword">$</span> pm2 save
+<span class="keyword">$</span> pm2 startup</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer" id="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-badges">
+        <span class="tech-badge"><span class="badge-dot" style="background:var(--success)"></span> Node.js 22</span>
+        <span class="tech-badge"><span class="badge-dot" style="background:var(--accent)"></span> Express 4</span>
+        <span class="tech-badge"><span class="badge-dot" style="background:var(--warning)"></span> WebSocket</span>
+        <span class="tech-badge"><span class="badge-dot" style="background:var(--danger)"></span> iptables</span>
+        <span class="tech-badge"><span class="badge-dot" style="background:#a78bfa"></span> nftables</span>
+        <span class="tech-badge"><span class="badge-dot" style="background:var(--success)"></span> Docker</span>
+        <span class="tech-badge"><span class="badge-dot" style="background:var(--accent)"></span> Suricata</span>
+        <span class="tech-badge"><span class="badge-dot" style="background:var(--warning)"></span> DPDK</span>
+      </div>
+      <p class="footer-copy">Sentinel Firewall &copy; 2026. Plataforma enterprise de gerenciamento de firewall.<br>Construído com segurança em primeiro lugar.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="alert" aria-live="polite">
+  <span class="toast-icon"><i data-lucide="check-circle" style="width:16px;height:16px"></i></span>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- LUCIDE ICONS -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<script>
+(function(){
+'use strict';
+
+// ===== INIT ICONS =====
+lucide.createIcons();
+
+// ===== NAV =====
+const nav = document.getElementById('nav');
+const navToggle = document.getElementById('navToggle');
+const mobileMenu = document.getElementById('mobileMenu');
+
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 20);
+});
+
+navToggle.addEventListener('click', () => {
+  const open = mobileMenu.classList.toggle('open');
+  navToggle.setAttribute('aria-expanded', open);
+});
+
+mobileMenu.querySelectorAll('a').forEach(a => {
+  a.addEventListener('click', () => mobileMenu.classList.remove('open'));
+});
+
+// ===== MATRIX RAIN =====
+const matrixCanvas = document.getElementById('matrixCanvas');
+const mCtx = matrixCanvas.getContext('2d');
+let mCols, mDrops;
+const chars = 'SENTINEL01FIREWALLPROTECT'.split('');
+
+function initMatrix() {
+  matrixCanvas.width = matrixCanvas.offsetWidth;
+  matrixCanvas.height = matrixCanvas.offsetHeight;
+  const fontSize = 14;
+  mCols = Math.floor(matrixCanvas.width / fontSize);
+  mDrops = Array(mCols).fill(1);
+}
+
+function drawMatrix() {
+  mCtx.fillStyle = 'rgba(10,10,18,0.06)';
+  mCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+  mCtx.fillStyle = '#00d4ff';
+  mCtx.font = '14px JetBrains Mono';
+  for (let i = 0; i < mCols; i++) {
+    const char = chars[Math.floor(Math.random() * chars.length)];
+    mCtx.fillText(char, i * 14, mDrops[i] * 14);
+    if (mDrops[i] * 14 > matrixCanvas.height && Math.random() > 0.975) mDrops[i] = 0;
+    mDrops[i]++;
+  }
+  requestAnimationFrame(drawMatrix);
+}
+
+initMatrix();
+drawMatrix();
+window.addEventListener('resize', initMatrix);
+
+// ===== TERMINAL TYPING =====
+const terminalLines = [
+  { type: 'prompt', text: '$ ' },
+  { type: 'cmd', text: 'sentinel-fw --status\n' },
+  { type: 'output', text: '[OK] Motor de regras: 342 regras ativas\n' },
+  { type: 'output', text: '[OK] IDS/IPS: Suricata v7.0 conectado\n' },
+  { type: 'output', text: '[OK] Bloqueios hoje: 1.847 IPs\n' },
+  { type: 'prompt', text: '$ ' },
+  { type: 'cmd', text: 'sentinel-fw --add-rule DROP 0.0.0.0/0 --port 23\n' },
+  { type: 'output', text: '[RULE] Telnet bloqueado em todas as interfaces\n' },
+  { type: 'prompt', text: '$ ' },
+  { type: 'cmd', text: '' }
+];
+
+const termBody = document.getElementById('terminalBody');
+let lineIdx = 0, charIdx = 0, currentHTML = '';
+
+function typeTerminal() {
+  if (lineIdx >= terminalLines.length) {
+    termBody.innerHTML = currentHTML + '<span class="typing-cursor"></span>';
+    return;
+  }
+  const line = terminalLines[lineIdx];
+  if (charIdx < line.text.length) {
+    currentHTML += charIdx === 0 ? `<span class="${line.type}">` : '';
+    const ch = line.text[charIdx];
+    currentHTML += ch === '\n' ? '</span>\n' : ch;
+    charIdx++;
+    termBody.innerHTML = currentHTML + '<span class="typing-cursor"></span>';
+    setTimeout(typeTerminal, line.type === 'cmd' ? 50 : 15);
+  } else {
+    if (!line.text.endsWith('\n') && line.text.length > 0) currentHTML += '</span>';
+    lineIdx++;
+    charIdx = 0;
+    setTimeout(typeTerminal, line.type === 'output' ? 100 : 300);
+  }
+}
+setTimeout(typeTerminal, 800);
+
+// ===== COUNTER ANIMATION =====
+function animateCounters() {
+  document.querySelectorAll('[data-counter]').forEach(el => {
+    const target = parseInt(el.dataset.counter);
+    const suffix = el.dataset.suffix || '';
+    const duration = 2000;
+    const start = performance.now();
+    function update(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(target * eased).toLocaleString('pt-BR') + suffix;
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  });
+}
+
+// ===== TRAFFIC CANVAS =====
+const tCanvas = document.getElementById('trafficCanvas');
+const tCtx = tCanvas.getContext('2d');
+let tData = [];
+
+function initTraffic() {
+  tCanvas.width = tCanvas.offsetWidth * 2;
+  tCanvas.height = 160;
+  tCanvas.style.height = '80px';
+  if (tData.length === 0) {
+    for (let i = 0; i < 120; i++) tData.push(Math.random() * 60 + 20);
+  }
+}
+
+function drawTraffic() {
+  tData.shift();
+  tData.push(Math.random() * 60 + 20 + Math.sin(Date.now() / 2000) * 15);
+
+  tCtx.clearRect(0, 0, tCanvas.width, tCanvas.height);
+  const w = tCanvas.width / (tData.length - 1);
+
+  // Fill
+  tCtx.beginPath();
+  tCtx.moveTo(0, tCanvas.height);
+  tData.forEach((v, i) => {
+    const x = i * w, y = tCanvas.height - (v / 100) * tCanvas.height;
+    if (i === 0) tCtx.lineTo(x, y);
+    else {
+      const px = (i - 1) * w, py = tCanvas.height - (tData[i-1] / 100) * tCanvas.height;
+      const cx = (px + x) / 2;
+      tCtx.bezierCurveTo(cx, py, cx, y, x, y);
+    }
+  });
+  tCtx.lineTo(tCanvas.width, tCanvas.height);
+  tCtx.closePath();
+  const grad = tCtx.createLinearGradient(0, 0, 0, tCanvas.height);
+  grad.addColorStop(0, 'rgba(0,212,255,0.2)');
+  grad.addColorStop(1, 'rgba(0,212,255,0)');
+  tCtx.fillStyle = grad;
+  tCtx.fill();
+
+  // Line
+  tCtx.beginPath();
+  tData.forEach((v, i) => {
+    const x = i * w, y = tCanvas.height - (v / 100) * tCanvas.height;
+    if (i === 0) tCtx.moveTo(x, y);
+    else {
+      const px = (i - 1) * w, py = tCanvas.height - (tData[i-1] / 100) * tCanvas.height;
+      const cx = (px + x) / 2;
+      tCtx.bezierCurveTo(cx, py, cx, y, x, y);
+    }
+  });
+  tCtx.strokeStyle = '#00d4ff';
+  tCtx.lineWidth = 2;
+  tCtx.stroke();
+
+  // Dot at end
+  const lastY = tCanvas.height - (tData[tData.length-1] / 100) * tCanvas.height;
+  tCtx.beginPath();
+  tCtx.arc(tCanvas.width, lastY, 4, 0, Math.PI * 2);
+  tCtx.fillStyle = '#00d4ff';
+  tCtx.fill();
+
+  requestAnimationFrame(drawTraffic);
+}
+
+initTraffic();
+drawTraffic();
+window.addEventListener('resize', initTraffic);
+
+// ===== INTERSECTION OBSERVER =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      if (entry.target.querySelector('[data-counter]')) animateCounters();
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== RULE ENGINE =====
+let rules = JSON.parse(localStorage.getItem('sentinel-rules') || '[]');
+let nextId = rules.length ? Math.max(...rules.map(r => r.id)) + 1 : 1;
+let sortCol = 'id', sortDir = 'asc';
+
+const form = document.getElementById('ruleForm');
+const editIdInput = document.getElementById('ruleEditId');
+const submitBtn = document.getElementById('ruleSubmitBtn');
+const cancelBtn = document.getElementById('ruleCancelBtn');
+
+function saveRules() {
+  localStorage.setItem('sentinel-rules', JSON.stringify(rules));
+}
+
+function renderRules() {
+  const body = document.getElementById('rulesBody');
+  const empty = document.getElementById('emptyState');
+  document.getElementById('rulesCount').textContent = rules.length;
+
+  if (rules.length === 0) {
+    body.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const sorted = [...rules].sort((a, b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  body.innerHTML = sorted.map(r => `
+    <tr>
+      <td style="color:var(--text-muted)">${r.id}</td>
+      <td><span class="proto-badge">${r.proto}</span></td>
+      <td>${r.srcPort || '*'}</td>
+      <td>${r.dstPort || '*'}</td>
+      <td>${r.srcIP || '0.0.0.0/0'}</td>
+      <td>${r.dstIP || '0.0.0.0/0'}</td>
+      <td><span class="action-badge ${r.action.toLowerCase()}">${r.action}</span></td>
+      <td>
+        <div class="row-actions">
+          <button onclick="editRule(${r.id})" title="Editar" aria-label="Editar regra ${r.id}"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+          <button class="delete" onclick="deleteRule(${r.id})" title="Excluir" aria-label="Excluir regra ${r.id}"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  lucide.createIcons();
+}
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const data = {
+    proto: document.getElementById('ruleProto').value,
+    srcPort: document.getElementById('ruleSrcPort').value.trim(),
+    dstPort: document.getElementById('ruleDstPort').value.trim(),
+    srcIP: document.getElementById('ruleSrcIP').value.trim(),
+    dstIP: document.getElementById('ruleDstIP').value.trim(),
+    action: document.getElementById('ruleAction').value,
+    comment: document.getElementById('ruleComment').value.trim()
+  };
+
+  const editId = parseInt(editIdInput.value);
+  if (editId) {
+    const idx = rules.findIndex(r => r.id === editId);
+    if (idx !== -1) { rules[idx] = { ...rules[idx], ...data }; }
+    editIdInput.value = '';
+    submitBtn.innerHTML = '<i data-lucide="plus" style="width:14px;height:14px"></i> Adicionar';
+    cancelBtn.style.display = 'none';
+    showToast('Regra atualizada com sucesso');
+  } else {
+    data.id = nextId++;
+    rules.push(data);
+    showToast('Regra adicionada com sucesso');
+  }
+
+  saveRules();
+  renderRules();
+  form.reset();
+  lucide.createIcons();
+});
+
+window.editRule = function(id) {
+  const r = rules.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('ruleProto').value = r.proto;
+  document.getElementById('ruleSrcPort').value = r.srcPort;
+  document.getElementById('ruleDstPort').value = r.dstPort;
+  document.getElementById('ruleSrcIP').value = r.srcIP;
+  document.getElementById('ruleDstIP').value = r.dstIP;
+  document.getElementById('ruleAction').value = r.action;
+  document.getElementById('ruleComment').value = r.comment || '';
+  editIdInput.value = r.id;
+  submitBtn.innerHTML = '<i data-lucide="save" style="width:14px;height:14px"></i> Salvar';
+  cancelBtn.style.display = '';
+  lucide.createIcons();
+  document.getElementById('ruleProto').focus();
+};
+
+window.deleteRule = function(id) {
+  rules = rules.filter(r => r.id !== id);
+  saveRules();
+  renderRules();
+  showToast('Regra removida');
+};
+
+cancelBtn.addEventListener('click', () => {
+  form.reset();
+  editIdInput.value = '';
+  submitBtn.innerHTML = '<i data-lucide="plus" style="width:14px;height:14px"></i> Adicionar';
+  cancelBtn.style.display = 'none';
+  lucide.createIcons();
+});
+
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+  if (rules.length === 0) return;
+  if (confirm('Remover todas as regras?')) {
+    rules = [];
+    nextId = 1;
+    saveRules();
+    renderRules();
+    showToast('Todas as regras removidas');
+  }
+});
+
+// Sorting
+document.querySelectorAll('.rules-table th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.sort;
+    if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortCol = col; sortDir = 'asc'; }
+    document.querySelectorAll('.rules-table th').forEach(h => h.classList.remove('sorted'));
+    th.classList.add('sorted');
+    th.querySelector('.sort-icon').innerHTML = sortDir === 'asc' ? '&#9650;' : '&#9660;';
+    renderRules();
+  });
+});
+
+// Export
+document.getElementById('exportBtn').addEventListener('click', () => {
+  if (rules.length === 0) { showToast('Nenhuma regra para exportar'); return; }
+  const lines = [
+    '#!/bin/bash',
+    '# Sentinel Firewall - Regras iptables exportadas',
+    '# Gerado em: ' + new Date().toLocaleString('pt-BR'),
+    '# Total de regras: ' + rules.length,
+    '',
+    '# Limpar regras existentes',
+    'iptables -F',
+    'iptables -X',
+    '',
+    '# Politica padrao',
+    'iptables -P INPUT DROP',
+    'iptables -P FORWARD DROP',
+    'iptables -P OUTPUT ACCEPT',
+    '',
+    '# Permitir loopback',
+    'iptables -A INPUT -i lo -j ACCEPT',
+    '',
+    '# Permitir conexoes estabelecidas',
+    'iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT',
+    '',
+    '# === Regras customizadas ==='
+  ];
+
+  rules.forEach(r => {
+    let cmd = 'iptables -A INPUT';
+    if (r.proto && r.proto !== 'ALL') cmd += ` -p ${r.proto.toLowerCase()}`;
+    if (r.srcIP && r.srcIP !== '0.0.0.0/0') cmd += ` -s ${r.srcIP}`;
+    if (r.dstIP && r.dstIP !== '0.0.0.0/0') cmd += ` -d ${r.dstIP}`;
+    if (r.srcPort) cmd += ` --sport ${r.srcPort}`;
+    if (r.dstPort) cmd += ` --dport ${r.dstPort}`;
+    cmd += ` -j ${r.action}`;
+    if (r.comment) cmd += ` -m comment --comment "${r.comment}"`;
+    lines.push(cmd);
+  });
+
+  lines.push('', '# Salvar regras', 'iptables-save > /etc/iptables/rules.v4', 'echo "[OK] Regras aplicadas com sucesso"');
+
+  document.getElementById('exportOutput').textContent = lines.join('\n');
+  document.getElementById('exportModal').classList.add('open');
+});
+
+document.getElementById('closeModal').addEventListener('click', () => {
+  document.getElementById('exportModal').classList.remove('open');
+});
+
+document.getElementById('exportModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+
+document.getElementById('copyExport').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('exportOutput').textContent)
+    .then(() => showToast('Copiado para a área de transferência'));
+});
+
+// Presets
+const presets = {
+  webserver: [
+    { proto: 'TCP', srcPort: '', dstPort: '80', srcIP: '0.0.0.0/0', dstIP: '', action: 'ACCEPT', comment: 'HTTP' },
+    { proto: 'TCP', srcPort: '', dstPort: '443', srcIP: '0.0.0.0/0', dstIP: '', action: 'ACCEPT', comment: 'HTTPS' },
+    { proto: 'TCP', srcPort: '', dstPort: '8080', srcIP: '10.0.0.0/8', dstIP: '', action: 'ACCEPT', comment: 'Proxy reverso interno' },
+    { proto: 'ICMP', srcPort: '', dstPort: '', srcIP: '0.0.0.0/0', dstIP: '', action: 'ACCEPT', comment: 'Ping' }
+  ],
+  database: [
+    { proto: 'TCP', srcPort: '', dstPort: '3306', srcIP: '10.0.0.0/8', dstIP: '', action: 'ACCEPT', comment: 'MySQL interno' },
+    { proto: 'TCP', srcPort: '', dstPort: '5432', srcIP: '10.0.0.0/8', dstIP: '', action: 'ACCEPT', comment: 'PostgreSQL interno' },
+    { proto: 'TCP', srcPort: '', dstPort: '27017', srcIP: '10.0.0.0/8', dstIP: '', action: 'ACCEPT', comment: 'MongoDB interno' },
+    { proto: 'TCP', srcPort: '', dstPort: '6379', srcIP: '10.0.0.0/8', dstIP: '', action: 'ACCEPT', comment: 'Redis interno' },
+    { proto: 'TCP', srcPort: '', dstPort: '3306', srcIP: '0.0.0.0/0', dstIP: '', action: 'DROP', comment: 'Bloquear MySQL externo' },
+    { proto: 'TCP', srcPort: '', dstPort: '5432', srcIP: '0.0.0.0/0', dstIP: '', action: 'DROP', comment: 'Bloquear PostgreSQL externo' }
+  ],
+  mailserver: [
+    { proto: 'TCP', srcPort: '', dstPort: '25', srcIP: '0.0.0.0/0', dstIP: '', action: 'ACCEPT', comment: 'SMTP' },
+    { proto: 'TCP', srcPort: '', dstPort: '587', srcIP: '0.0.0.0/0', dstIP: '', action: 'ACCEPT', comment: 'SMTP Submission' },
+    { proto: 'TCP', srcPort: '', dstPort: '993', srcIP: '0.0.0.0/0', dstIP: '', action: 'ACCEPT', comment: 'IMAPS' },
+    { proto: 'TCP', srcPort: '', dstPort: '995', srcIP: '0.0.0.0/0', dstIP: '', action: 'ACCEPT', comment: 'POP3S' },
+    { proto: 'TCP', srcPort: '', dstPort: '110', srcIP: '0.0.0.0/0', dstIP: '', action: 'DROP', comment: 'Bloquear POP3 sem TLS' },
+    { proto: 'TCP', srcPort: '', dstPort: '143', srcIP: '0.0.0.0/0', dstIP: '', action: 'DROP', comment: 'Bloquear IMAP sem TLS' }
+  ],
+  ssh: [
+    { proto: 'TCP', srcPort: '', dstPort: '22', srcIP: '10.0.0.0/8', dstIP: '', action: 'ACCEPT', comment: 'SSH rede interna' },
+    { proto: 'TCP', srcPort: '', dstPort: '22', srcIP: '192.168.0.0/16', dstIP: '', action: 'ACCEPT', comment: 'SSH rede local' },
+    { proto: 'TCP', srcPort: '', dstPort: '22', srcIP: '0.0.0.0/0', dstIP: '', action: 'DROP', comment: 'Bloquear SSH externo' },
+    { proto: 'TCP', srcPort: '', dstPort: '23', srcIP: '0.0.0.0/0', dstIP: '', action: 'DROP', comment: 'Bloquear Telnet' }
+  ]
+};
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.preset;
+    const preset = presets[key];
+    if (!preset) return;
+    const names = { webserver: 'Web Server', database: 'Banco de Dados', mailserver: 'Servidor de E-mail', ssh: 'SSH Seguro' };
+    preset.forEach(r => {
+      r.id = nextId++;
+      rules.push({ ...r });
+    });
+    saveRules();
+    renderRules();
+    showToast(`Preset "${names[key]}" importado (${preset.length} regras)`);
+  });
+});
+
+renderRules();
+
+// ===== ACCORDION =====
+document.querySelectorAll('.accordion-trigger').forEach(trigger => {
+  trigger.addEventListener('click', () => {
+    const item = trigger.parentElement;
+    const content = item.querySelector('.accordion-content');
+    const isOpen = item.classList.contains('open');
+
+    document.querySelectorAll('.accordion-item.open').forEach(openItem => {
+      openItem.classList.remove('open');
+      openItem.querySelector('.accordion-content').style.maxHeight = '0';
+      openItem.querySelector('.accordion-trigger').setAttribute('aria-expanded', 'false');
+    });
+
+    if (!isOpen) {
+      item.classList.add('open');
+      content.style.maxHeight = content.scrollHeight + 'px';
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+  });
+});
+
+// ===== DEPLOY TABS =====
+document.querySelectorAll('.deploy-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.deploy-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.deploy-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ===== COPY CODE =====
+window.copyCode = function(btn) {
+  const code = btn.closest('.code-block').querySelector('.code-body').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copiado!';
+    btn.style.color = 'var(--success)';
+    btn.style.borderColor = 'var(--success)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+  });
+};
+
+// ===== KEYBOARD: ESC closes modal =====
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.getElementById('exportModal').classList.remove('open');
+    mobileMenu.classList.remove('open');
+  }
+});
+
+})();
+</script>
+</body>
+</html>
